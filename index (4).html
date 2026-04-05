@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sweet Crumbs Bakery</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FDF6EC;
+    --warm-white: #FFFAF3;
+    --caramel: #C8843A;
+    --caramel-dark: #A06828;
+    --caramel-light: #E8A855;
+    --chocolate: #3D1C02;
+    --chocolate-mid: #6B3A1F;
+    --dusty-rose: #D4896A;
+    --sage: #8A9E7A;
+    --text-dark: #2A1506;
+    --text-mid: #6B4C2A;
+    --text-light: #A0825C;
+    --border: #E8D5B8;
+    --shadow: 0 4px 24px rgba(61,28,2,0.10);
+    --shadow-lg: 0 12px 40px rgba(61,28,2,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+  h1,h2,h3,h4 { font-family: 'Playfair Display', serif; }
+
+  /* NAV */
+  nav { background: var(--chocolate); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top:0; z-index:100; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+  .nav-logo { font-family:'Playfair Display',serif; color:var(--caramel-light); font-size:1.5rem; font-weight:900; padding: 1rem 0; letter-spacing:-0.5px; }
+  .nav-logo span { color:#fff; font-style:italic; }
+  .nav-links { display:flex; gap:0.25rem; align-items:center; }
+  .nav-btn { background:none; border:none; color:#D4B896; padding:0.6rem 1rem; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:500; transition:all 0.2s; }
+  .nav-btn:hover, .nav-btn.active { background:rgba(200,132,58,0.2); color:var(--caramel-light); }
+  .cart-btn { background:var(--caramel); color:#fff !important; border-radius:8px; position:relative; }
+  .cart-btn:hover { background:var(--caramel-dark) !important; }
+  .cart-badge { position:absolute; top:-6px; right:-6px; background:#E53E3E; color:#fff; border-radius:50%; width:18px; height:18px; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, var(--chocolate) 0%, var(--chocolate-mid) 60%, #8B5E3C 100%); color:#fff; text-align:center; padding: 5rem 2rem 4rem; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8843a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  .hero h1 { font-size:clamp(2.5rem,6vw,4.5rem); font-weight:900; letter-spacing:-1px; margin-bottom:1rem; position:relative; }
+  .hero h1 em { color:var(--caramel-light); font-style:italic; }
+  .hero p { font-size:1.15rem; color:#D4B896; max-width:500px; margin:0 auto 2rem; position:relative; }
+  .hero-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; position:relative; }
+  .btn { padding:0.8rem 2rem; border-radius:10px; border:none; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .btn-primary { background:var(--caramel); color:#fff; box-shadow:0 4px 16px rgba(200,132,58,0.4); }
+  .btn-primary:hover { background:var(--caramel-dark); transform:translateY(-2px); box-shadow:0 8px 24px rgba(200,132,58,0.5); }
+  .btn-outline { background:transparent; color:#fff; border:2px solid rgba(255,255,255,0.4); }
+  .btn-outline:hover { background:rgba(255,255,255,0.1); }
+  .btn-danger { background:#E53E3E; color:#fff; }
+  .btn-danger:hover { background:#C53030; }
+  .btn-sm { padding:0.45rem 1rem; font-size:0.85rem; }
+  .btn-xs { padding:0.3rem 0.7rem; font-size:0.78rem; }
+
+  /* SECTION */
+  .section { padding: 3rem 2rem; max-width:1200px; margin:0 auto; }
+  .section-title { font-size:clamp(1.8rem,4vw,2.5rem); color:var(--chocolate); margin-bottom:0.5rem; }
+  .section-sub { color:var(--text-light); margin-bottom:2.5rem; font-size:0.95rem; }
+
+  /* MENU GRID */
+  .menu-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:1.5rem; }
+  .menu-card { background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); transition:all 0.3s; border:1px solid var(--border); }
+  .menu-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+  .menu-card-img { width:100%; height:160px; object-fit:cover; background:linear-gradient(135deg,#F5E6D0,#E8C9A0); display:flex; align-items:center; justify-content:center; font-size:3.5rem; }
+  .menu-card-body { padding:1.2rem; }
+  .menu-card-cat { font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--caramel); font-weight:600; margin-bottom:0.3rem; }
+  .menu-card-name { font-size:1.1rem; font-weight:700; color:var(--chocolate); margin-bottom:0.3rem; }
+  .menu-card-price { font-size:1.25rem; font-weight:700; color:var(--caramel-dark); margin-bottom:1rem; }
+  .stock-badge { display:inline-block; font-size:0.72rem; padding:0.2rem 0.6rem; border-radius:20px; margin-bottom:0.8rem; font-weight:600; }
+  .in-stock { background:#ECFDF5; color:#065F46; }
+  .low-stock { background:#FEF3C7; color:#92400E; }
+  .out-stock { background:#FEE2E2; color:#991B1B; }
+
+  /* CART */
+  .cart-container { max-width:800px; margin:0 auto; }
+  .cart-item { background:#fff; border-radius:12px; padding:1rem 1.5rem; display:flex; align-items:center; gap:1rem; margin-bottom:1rem; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .cart-item-emoji { font-size:2.5rem; width:60px; text-align:center; }
+  .cart-item-info { flex:1; }
+  .cart-item-name { font-weight:700; color:var(--chocolate); }
+  .cart-item-price { color:var(--text-light); font-size:0.9rem; }
+  .qty-ctrl { display:flex; align-items:center; gap:0.5rem; }
+  .qty-btn { width:32px; height:32px; border:2px solid var(--border); border-radius:8px; background:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .qty-btn:hover { border-color:var(--caramel); color:var(--caramel); }
+  .qty-val { font-weight:700; font-size:1.1rem; min-width:24px; text-align:center; }
+  .cart-item-total { font-weight:700; color:var(--caramel-dark); font-size:1.1rem; }
+  .cart-summary { background:var(--chocolate); color:#fff; border-radius:16px; padding:1.5rem 2rem; margin-top:1.5rem; }
+  .cart-summary-row { display:flex; justify-content:space-between; margin-bottom:0.5rem; color:#D4B896; }
+  .cart-summary-total { display:flex; justify-content:space-between; font-size:1.4rem; font-weight:800; color:var(--caramel-light); border-top:1px solid rgba(255,255,255,0.15); padding-top:1rem; margin-top:0.5rem; font-family:'Playfair Display',serif; }
+  .empty-state { text-align:center; padding:4rem 2rem; color:var(--text-light); }
+  .empty-state .emoji { font-size:4rem; display:block; margin-bottom:1rem; }
+
+  /* FORMS */
+  .form-card { background:#fff; border-radius:16px; padding:2rem; box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:1.5rem; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .form-group { margin-bottom:1rem; }
+  .form-group label { display:block; font-weight:600; font-size:0.85rem; color:var(--text-mid); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.5px; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:0.7rem 1rem; border:2px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.95rem; color:var(--text-dark); background:#fff; transition:border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:var(--caramel); }
+  .full-width { grid-column:1/-1; }
+
+  /* BILL / RECEIPT */
+  .bill-card { background:#fff; border-radius:20px; padding:2.5rem; max-width:600px; margin:0 auto; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
+  .bill-header { text-align:center; padding-bottom:1.5rem; border-bottom:2px dashed var(--border); margin-bottom:1.5rem; }
+  .bill-logo { font-family:'Playfair Display',serif; font-size:2rem; color:var(--chocolate); font-weight:900; }
+  .bill-logo span { color:var(--caramel); }
+  .bill-table { width:100%; border-collapse:collapse; margin-bottom:1.5rem; }
+  .bill-table th { text-align:left; color:var(--text-light); font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; padding:0.5rem 0; border-bottom:1px solid var(--border); }
+  .bill-table td { padding:0.6rem 0; border-bottom:1px solid #F5EDE0; font-size:0.95rem; }
+  .bill-total-row { display:flex; justify-content:space-between; padding:0.4rem 0; }
+  .bill-grand-total { font-size:1.4rem; font-family:'Playfair Display',serif; font-weight:900; color:var(--chocolate); border-top:2px solid var(--chocolate); padding-top:1rem; margin-top:0.5rem; }
+  .bill-actions { display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap; }
+
+  /* ADMIN */
+  .admin-tabs { display:flex; gap:0.5rem; margin-bottom:2rem; flex-wrap:wrap; }
+  .tab-btn { padding:0.6rem 1.4rem; border-radius:10px; border:2px solid var(--border); background:#fff; font-family:'DM Sans',sans-serif; font-weight:600; font-size:0.9rem; cursor:pointer; transition:all 0.2s; color:var(--text-mid); }
+  .tab-btn.active { background:var(--chocolate); color:#fff; border-color:var(--chocolate); }
+  .admin-table { width:100%; border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
+  .admin-table th { background:var(--chocolate); color:#D4B896; padding:1rem 1.2rem; text-align:left; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; }
+  .admin-table td { padding:0.9rem 1.2rem; border-bottom:1px solid var(--border); font-size:0.9rem; }
+  .admin-table tr:last-child td { border-bottom:none; }
+  .admin-table tr:hover td { background:#FFFAF3; }
+  .status-badge { display:inline-block; padding:0.3rem 0.8rem; border-radius:20px; font-size:0.78rem; font-weight:700; }
+  .status-pending { background:#FEF3C7; color:#92400E; }
+  .status-preparing { background:#DBEAFE; color:#1E40AF; }
+  .status-delivered { background:#ECFDF5; color:#065F46; }
+  .action-btns { display:flex; gap:0.5rem; flex-wrap:wrap; }
+  select.status-select { padding:0.35rem 0.7rem; border-radius:8px; border:2px solid var(--border); font-size:0.82rem; cursor:pointer; font-family:'DM Sans',sans-serif; background:#fff; }
+  select.status-select:focus { outline:none; border-color:var(--caramel); }
+
+  /* LOGIN */
+  .login-wrapper { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, var(--chocolate) 0%, var(--chocolate-mid) 100%); padding:2rem; }
+  .login-card { background:#fff; border-radius:24px; padding:3rem; width:100%; max-width:420px; box-shadow:0 24px 80px rgba(0,0,0,0.3); }
+  .login-logo { text-align:center; margin-bottom:2rem; }
+  .login-logo h1 { font-size:2.2rem; color:var(--chocolate); }
+  .login-logo h1 span { color:var(--caramel); }
+  .login-logo p { color:var(--text-light); font-size:0.9rem; margin-top:0.3rem; }
+  .error-msg { background:#FEE2E2; color:#991B1B; padding:0.75rem 1rem; border-radius:10px; font-size:0.88rem; margin-bottom:1rem; }
+  .success-msg { background:#ECFDF5; color:#065F46; padding:0.75rem 1rem; border-radius:10px; font-size:0.88rem; margin-bottom:1rem; }
+
+  /* TOAST */
+  .toast-container { position:fixed; bottom:2rem; right:2rem; z-index:9999; display:flex; flex-direction:column; gap:0.75rem; }
+  .toast { background:var(--chocolate); color:#fff; padding:0.9rem 1.5rem; border-radius:12px; font-size:0.9rem; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:0.75rem; animation:slideIn 0.3s ease; max-width:320px; }
+  @keyframes slideIn { from{transform:translateX(100%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+  .toast-success { border-left:4px solid var(--sage); }
+  .toast-error { border-left:4px solid #E53E3E; }
+  .toast-info { border-left:4px solid var(--caramel); }
+
+  /* SPINNER */
+  .spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; display:flex; align-items:center; justify-content:center; padding:1rem; backdrop-filter:blur(4px); }
+  .modal { background:#fff; border-radius:20px; padding:2rem; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,0.3); }
+  .modal-title { font-size:1.5rem; color:var(--chocolate); margin-bottom:1.5rem; }
+
+  /* CATEGORY FILTER */
+  .cat-filter { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:2rem; }
+  .cat-pill { padding:0.5rem 1.2rem; border-radius:20px; border:2px solid var(--border); background:#fff; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s; color:var(--text-mid); font-family:'DM Sans',sans-serif; }
+  .cat-pill:hover, .cat-pill.active { background:var(--caramel); color:#fff; border-color:var(--caramel); }
+
+  /* STATS */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:#fff; border-radius:14px; padding:1.2rem 1.5rem; box-shadow:var(--shadow); border:1px solid var(--border); border-left:4px solid var(--caramel); }
+  .stat-label { font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-light); font-weight:600; margin-bottom:0.3rem; }
+  .stat-value { font-size:2rem; font-weight:900; color:var(--chocolate); font-family:'Playfair Display',serif; }
+  .stat-sub { font-size:0.8rem; color:var(--text-light); }
+
+  /* RESPONSIVE */
+  @media(max-width:768px) {
+    nav { padding:0 1rem; }
+    .nav-logo { font-size:1.2rem; }
+    .nav-btn { padding:0.5rem 0.6rem; font-size:0.8rem; }
+    .form-grid { grid-template-columns:1fr; }
+    .section { padding:2rem 1rem; }
+    .cart-item { flex-wrap:wrap; }
+    .admin-table { display:block; overflow-x:auto; }
+    .bill-actions { flex-direction:column; }
+  }
+  @media print {
+    nav, .bill-actions, .no-print { display:none !important; }
+    .bill-card { box-shadow:none; border:none; max-width:100%; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── SUPABASE CONFIG ───────────────────────────────────────────────────────────
+// Replace these with your actual Supabase project credentials
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ADMIN_EMAIL = 'dinesh@gmail.com';
+const WA_NUMBER = '919345997475';
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────────
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+  const add = (msg, type='info') => {
+    const id = Date.now();
+    setToasts(t => [...t, {id, msg, type}]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  };
+  return { toasts, toast: add };
+}
+function ToastContainer({ toasts }) {
+  if (!toasts.length) return null;
+  const icons = {success:'✅', error:'❌', info:'🔔'};
+  return <div className="toast-container">{toasts.map(t => (
+    <div key={t.id} className={`toast toast-${t.type}`}>{icons[t.type]} {t.msg}</div>
+  ))}</div>;
+}
+
+// ─── LOGIN ─────────────────────────────────────────────────────────────────────
+function LoginPage({ onLogin, toast }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    setError(''); setLoading(true);
+    try {
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) throw err;
+      if (data.user.email !== ADMIN_EMAIL) {
+        await supabase.auth.signOut();
+        throw new Error('Access denied. Admin only.');
+      }
+      toast('Welcome back, Admin! 👋', 'success');
+      onLogin(data.user);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="login-wrapper">
+      <div className="login-card">
+        <div className="login-logo">
+          <h1>Sweet <span>Crumbs</span></h1>
+          <p>🔐 Admin Portal</p>
+        </div>
+        {error && <div className="error-msg">{error}</div>}
+        <div className="form-group">
+          <label>Email</label>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="dinesh@gmail.com" onKeyDown={e=>e.key==='Enter'&&handleSubmit()} />
+        </div>
+        <div className="form-group">
+          <label>Password</label>
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&handleSubmit()} />
+        </div>
+        <button className="btn btn-primary" style={{width:'100%', marginTop:'0.5rem'}} onClick={handleSubmit} disabled={loading}>
+          {loading ? <span className="spinner"/> : 'Login as Admin'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HOME ──────────────────────────────────────────────────────────────────────
+function HomePage({ setPage }) {
+  const features = [
+    { icon:'🍞', title:'Fresh Daily', desc:'Baked every morning with love and the finest ingredients.' },
+    { icon:'🎂', title:'Custom Orders', desc:'Celebrate life moments with our tailor-made creations.' },
+    { icon:'🚚', title:'Home Delivery', desc:'Hot and fresh, delivered right to your doorstep.' },
+    { icon:'⭐', title:'Award Winning', desc:'Voted #1 bakery in town for 3 consecutive years.' },
+  ];
+  return (
+    <>
+      <div className="hero">
+        <h1>Baked with <em>Love</em>,<br/>Served with Joy.</h1>
+        <p>Artisan breads, dreamy pastries & celebration cakes — all crafted fresh every single day.</p>
+        <div className="hero-btns">
+          <button className="btn btn-primary" onClick={()=>setPage('menu')}>🥐 Explore Menu</button>
+          <button className="btn btn-outline" onClick={()=>setPage('cart')}>🛒 View Cart</button>
+        </div>
+      </div>
+      <div className="section">
+        <h2 className="section-title">Why Choose Us?</h2>
+        <p className="section-sub">Everything we make starts with passion and ends with perfection.</p>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:'1.5rem'}}>
+          {features.map(f => (
+            <div key={f.title} className="form-card" style={{textAlign:'center', padding:'2rem 1.5rem'}}>
+              <div style={{fontSize:'2.5rem', marginBottom:'0.75rem'}}>{f.icon}</div>
+              <h3 style={{color:'var(--chocolate)', marginBottom:'0.5rem', fontSize:'1.1rem'}}>{f.title}</h3>
+              <p style={{color:'var(--text-light)', fontSize:'0.9rem', lineHeight:1.6}}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── MENU PAGE ─────────────────────────────────────────────────────────────────
+const CATEGORY_EMOJIS = {
+  'Bread':'🍞','Cake':'🎂','Pastry':'🥐','Cookie':'🍪','Muffin':'🧁','Pie':'🥧','Donut':'🍩','Other':'🍫'
+};
+function MenuPage({ cart, setCart, toast }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cat, setCat] = useState('All');
+  const categories = ['All', ...new Set(items.map(i => i.category))];
+
+  useEffect(() => {
+    supabase.from('menu_items').select('*').order('created_at', {ascending:false}).then(({data}) => {
+      setItems(data || []); setLoading(false);
+    });
+  }, []);
+
+  const addToCart = (item) => {
+    if (item.stock < 1) return toast('Out of stock!', 'error');
+    setCart(prev => {
+      const ex = prev.find(c => c.id === item.id);
+      if (ex) return prev.map(c => c.id===item.id ? {...c, qty: c.qty+1} : c);
+      return [...prev, {...item, qty:1}];
+    });
+    toast(`${item.name} added to cart! 🛒`, 'success');
+  };
+
+  const filtered = cat==='All' ? items : items.filter(i => i.category===cat);
+
+  if (loading) return <div className="section"><div className="empty-state"><span className="emoji">⏳</span>Loading menu…</div></div>;
+
+  return (
+    <div className="section">
+      <h2 className="section-title">Our Menu</h2>
+      <p className="section-sub">Freshly baked & ready to order</p>
+      <div className="cat-filter">
+        {categories.map(c => <button key={c} className={`cat-pill ${cat===c?'active':''}`} onClick={()=>setCat(c)}>{c}</button>)}
+      </div>
+      {filtered.length === 0 ? (
+        <div className="empty-state"><span className="emoji">🍰</span><p>No items in this category yet.</p></div>
+      ) : (
+        <div className="menu-grid">
+          {filtered.map(item => {
+            const inCart = cart.find(c => c.id===item.id);
+            return (
+              <div key={item.id} className="menu-card">
+                <div className="menu-card-img">
+                  {item.image_url
+                    ? <img src={item.image_url} alt={item.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>e.target.style.display='none'} />
+                    : CATEGORY_EMOJIS[item.category] || '🍰'}
+                </div>
+                <div className="menu-card-body">
+                  <div className="menu-card-cat">{item.category}</div>
+                  <div className="menu-card-name">{item.name}</div>
+                  <div className="menu-card-price">₹{item.price}</div>
+                  <span className={`stock-badge ${item.stock>5?'in-stock':item.stock>0?'low-stock':'out-stock'}`}>
+                    {item.stock>5?`✓ In Stock`:item.stock>0?`⚡ Only ${item.stock} left`:'✗ Out of Stock'}
+                  </span>
+                  {inCart ? (
+                    <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                      <button className="qty-btn" onClick={()=>setCart(p=>p.map(c=>c.id===item.id?{...c,qty:Math.max(1,c.qty-1)}:c))}>−</button>
+                      <span className="qty-val">{inCart.qty}</span>
+                      <button className="qty-btn" onClick={()=>setCart(p=>p.map(c=>c.id===item.id?{...c,qty:c.qty+1}:c))}>+</button>
+                      <span style={{fontSize:'0.8rem',color:'var(--caramel-dark)',fontWeight:700}}>In Cart ✓</span>
+                    </div>
+                  ) : (
+                    <button className="btn btn-primary btn-sm" onClick={()=>addToCart(item)} disabled={item.stock<1} style={{width:'100%'}}>
+                      {item.stock<1?'Out of Stock':'Add to Cart'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CART PAGE ─────────────────────────────────────────────────────────────────
+function CartPage({ cart, setCart, setPage, toast }) {
+  const subtotal = cart.reduce((s, i) => s+i.price*i.qty, 0);
+  const gst = Math.round(subtotal * 0.05);
+  const total = subtotal + gst;
+
+  const updateQty = (id, qty) => {
+    if (qty < 1) { setCart(p => p.filter(c => c.id!==id)); return; }
+    setCart(p => p.map(c => c.id===id ? {...c, qty} : c));
+  };
+
+  if (cart.length === 0) return (
+    <div className="section cart-container">
+      <div className="empty-state">
+        <span className="emoji">🛒</span>
+        <h3 style={{color:'var(--chocolate)', marginBottom:'0.5rem'}}>Your cart is empty</h3>
+        <p style={{marginBottom:'1.5rem'}}>Browse our menu and add some delicious items!</p>
+        <button className="btn btn-primary" onClick={()=>setPage('menu')}>Go to Menu</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="section cart-container">
+      <h2 className="section-title">Your Cart</h2>
+      <p className="section-sub">{cart.length} item{cart.length!==1?'s':''} in your order</p>
+      {cart.map(item => (
+        <div key={item.id} className="cart-item">
+          <div className="cart-item-emoji">{CATEGORY_EMOJIS[item.category]||'🍰'}</div>
+          <div className="cart-item-info">
+            <div className="cart-item-name">{item.name}</div>
+            <div className="cart-item-price">₹{item.price} each</div>
+          </div>
+          <div className="qty-ctrl">
+            <button className="qty-btn" onClick={()=>updateQty(item.id, item.qty-1)}>−</button>
+            <span className="qty-val">{item.qty}</span>
+            <button className="qty-btn" onClick={()=>updateQty(item.id, item.qty+1)}>+</button>
+          </div>
+          <div className="cart-item-total">₹{item.price*item.qty}</div>
+          <button className="btn btn-danger btn-xs" onClick={()=>setCart(p=>p.filter(c=>c.id!==item.id))}>✕</button>
+        </div>
+      ))}
+      <div className="cart-summary">
+        <div className="cart-summary-row"><span>Subtotal</span><span>₹{subtotal}</span></div>
+        <div className="cart-summary-row"><span>GST (5%)</span><span>₹{gst}</span></div>
+        <div className="cart-summary-total"><span>Total</span><span>₹{total}</span></div>
+        <button className="btn btn-primary" style={{width:'100%', marginTop:'1.25rem', fontSize:'1rem', padding:'0.9rem'}} onClick={()=>setPage('checkout')}>
+          Proceed to Checkout →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CHECKOUT ──────────────────────────────────────────────────────────────────
+function CheckoutPage({ cart, setCart, setPage, setBillData, toast }) {
+  const [form, setForm] = useState({name:'', phone:'', address:''});
+  const [loading, setLoading] = useState(false);
+  const subtotal = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  const gst = Math.round(subtotal*0.05);
+  const total = subtotal + gst;
+
+  const set = k => e => setForm(f => ({...f, [k]:e.target.value}));
+
+  const placeOrder = async () => {
+    if (!form.name||!form.phone||!form.address) return toast('Please fill all fields!', 'error');
+    if (cart.length===0) return toast('Cart is empty!', 'error');
+    setLoading(true);
+    try {
+      const orderItems = cart.map(i=>({id:i.id, name:i.name, price:i.price, qty:i.qty}));
+      const { data, error } = await supabase.from('orders').insert([{
+        customer_name: form.name,
+        phone: form.phone,
+        address: form.address,
+        items: orderItems,
+        total_amount: total,
+        status: 'Pending'
+      }]).select().single();
+      if (error) throw error;
+
+      // WhatsApp notification
+      const itemLines = orderItems.map(i=>`• ${i.name} x${i.qty} — ₹${i.price*i.qty}`).join('\n');
+      const msg = encodeURIComponent(`🍰 *New Bakery Order*\n\n👤 Name: ${form.name}\n📞 Phone: ${form.phone}\n📍 Address: ${form.address}\n\n🛒 *Items:*\n${itemLines}\n\n💰 Subtotal: ₹${subtotal}\n🏛 GST (5%): ₹${gst}\n💵 *Total: ₹${total}*\n\n🆔 Order ID: ${data.id.slice(0,8).toUpperCase()}`);
+      window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+
+      setBillData({...data, gst, subtotal, orderItems});
+      setCart([]);
+      toast('Order placed successfully! 🎉', 'success');
+      setPage('bill');
+    } catch(e) { toast('Error placing order: '+e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="section" style={{maxWidth:700, margin:'0 auto'}}>
+      <h2 className="section-title">Checkout</h2>
+      <p className="section-sub">Almost there! Enter your delivery details.</p>
+      <div className="form-card">
+        <h3 style={{color:'var(--chocolate)', marginBottom:'1.25rem', fontSize:'1.15rem'}}>📋 Delivery Information</h3>
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Full Name</label>
+            <input placeholder="Your full name" value={form.name} onChange={set('name')} />
+          </div>
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input placeholder="10-digit number" value={form.phone} onChange={set('phone')} maxLength={10} />
+          </div>
+          <div className="form-group full-width">
+            <label>Delivery Address</label>
+            <textarea placeholder="Street, Area, City, Pincode" value={form.address} onChange={set('address')} rows={3} style={{resize:'vertical'}} />
+          </div>
+        </div>
+      </div>
+      <div className="form-card">
+        <h3 style={{color:'var(--chocolate)', marginBottom:'1rem', fontSize:'1.15rem'}}>🛒 Order Summary</h3>
+        {cart.map(i => (
+          <div key={i.id} style={{display:'flex', justifyContent:'space-between', padding:'0.5rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.9rem'}}>
+            <span>{i.name} × {i.qty}</span>
+            <span style={{fontWeight:700}}>₹{i.price*i.qty}</span>
+          </div>
+        ))}
+        <div style={{display:'flex', justifyContent:'space-between', padding:'0.5rem 0', color:'var(--text-light)', fontSize:'0.9rem'}}><span>GST (5%)</span><span>₹{gst}</span></div>
+        <div style={{display:'flex', justifyContent:'space-between', padding:'0.8rem 0 0', fontWeight:800, fontSize:'1.2rem', fontFamily:'Playfair Display,serif', color:'var(--chocolate)', borderTop:'2px solid var(--border)', marginTop:'0.5rem'}}><span>Total</span><span>₹{total}</span></div>
+      </div>
+      <button className="btn btn-primary" style={{width:'100%', fontSize:'1.05rem', padding:'1rem'}} onClick={placeOrder} disabled={loading}>
+        {loading ? <span className="spinner"/> : '✅ Place Order & Send WhatsApp'}
+      </button>
+      <p style={{textAlign:'center', color:'var(--text-light)', fontSize:'0.82rem', marginTop:'0.75rem'}}>WhatsApp will open for you to confirm and send the order notification.</p>
+    </div>
+  );
+}
+
+// ─── BILL / RECEIPT ────────────────────────────────────────────────────────────
+function BillPage({ billData, setPage }) {
+  if (!billData) return (
+    <div className="section"><div className="empty-state"><span className="emoji">🧾</span><p>No active bill. Place an order first.</p><button className="btn btn-primary" onClick={()=>setPage('menu')}>Go to Menu</button></div></div>
+  );
+
+  const { id, customer_name, phone, address, orderItems, subtotal, gst, total_amount, created_at, status } = billData;
+  const date = new Date(created_at).toLocaleString('en-IN');
+
+  const downloadPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(22); doc.text('Sweet Crumbs Bakery', 105, 20, {align:'center'});
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text('Artisan Breads & Pastries', 105, 27, {align:'center'});
+    doc.line(20, 32, 190, 32);
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('INVOICE / RECEIPT', 105, 42, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text(`Order ID: #${id.slice(0,8).toUpperCase()}`, 20, 55);
+    doc.text(`Date: ${date}`, 20, 63);
+    doc.text(`Customer: ${customer_name}`, 20, 71);
+    doc.text(`Phone: ${phone}`, 20, 79);
+    doc.text(`Address: ${address}`, 20, 87);
+    doc.text(`Status: ${status}`, 20, 95);
+    doc.line(20, 100, 190, 100);
+    doc.setFont('helvetica','bold');
+    doc.text('Item', 20, 110); doc.text('Qty', 120, 110); doc.text('Price', 150, 110); doc.text('Amount', 175, 110);
+    doc.setFont('helvetica','normal');
+    let y = 120;
+    orderItems.forEach(item => {
+      doc.text(item.name, 20, y); doc.text(String(item.qty), 120, y);
+      doc.text(`Rs.${item.price}`, 148, y); doc.text(`Rs.${item.price*item.qty}`, 173, y);
+      y += 10;
+    });
+    doc.line(20, y+3, 190, y+3); y += 12;
+    doc.text(`Subtotal: Rs.${subtotal}`, 130, y, {align:'right'}); y+=8;
+    doc.text(`GST (5%): Rs.${gst}`, 130, y, {align:'right'}); y+=8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text(`TOTAL: Rs.${total_amount}`, 130, y, {align:'right'}); y+=15;
+    doc.setFont('helvetica','italic'); doc.setFontSize(10);
+    doc.text('Thank you for choosing Sweet Crumbs Bakery!', 105, y+10, {align:'center'});
+    doc.save(`sweetcrumbs-order-${id.slice(0,8)}.pdf`);
+  };
+
+  return (
+    <div className="section">
+      <div className="bill-card" id="bill-print-area">
+        <div className="bill-header">
+          <div className="bill-logo">Sweet <span>Crumbs</span> Bakery</div>
+          <div style={{color:'var(--text-light)', fontSize:'0.85rem', marginTop:'0.3rem'}}>Artisan Breads & Pastries</div>
+          <div style={{marginTop:'1rem', display:'flex', justifyContent:'center', gap:'1rem', flexWrap:'wrap', fontSize:'0.85rem', color:'var(--text-mid)'}}>
+            <span>🆔 #{id.slice(0,8).toUpperCase()}</span>
+            <span>📅 {date}</span>
+            <span className={`status-badge status-${status.toLowerCase()}`}>{status}</span>
+          </div>
+        </div>
+        <div style={{marginBottom:'1.5rem', padding:'1rem', background:'var(--cream)', borderRadius:'12px', fontSize:'0.9rem'}}>
+          <div><strong>👤</strong> {customer_name}</div>
+          <div style={{marginTop:'0.3rem'}}><strong>📞</strong> {phone}</div>
+          <div style={{marginTop:'0.3rem'}}><strong>📍</strong> {address}</div>
+        </div>
+        <table className="bill-table">
+          <thead>
+            <tr><th>Item</th><th>Qty</th><th style={{textAlign:'right'}}>Rate</th><th style={{textAlign:'right'}}>Amount</th></tr>
+          </thead>
+          <tbody>
+            {orderItems.map((item,i) => (
+              <tr key={i}>
+                <td>{item.name}</td>
+                <td>×{item.qty}</td>
+                <td style={{textAlign:'right'}}>₹{item.price}</td>
+                <td style={{textAlign:'right', fontWeight:600}}>₹{item.price*item.qty}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{background:'var(--cream)', borderRadius:'12px', padding:'1rem 1.25rem'}}>
+          <div className="bill-total-row"><span style={{color:'var(--text-light)'}}>Subtotal</span><span>₹{subtotal}</span></div>
+          <div className="bill-total-row"><span style={{color:'var(--text-light)'}}>GST (5%)</span><span>₹{gst}</span></div>
+          <div className="bill-total-row bill-grand-total"><span>Grand Total</span><span>₹{total_amount}</span></div>
+        </div>
+        <div style={{textAlign:'center', marginTop:'1.5rem', color:'var(--text-light)', fontSize:'0.85rem', fontStyle:'italic'}}>
+          🍰 Thank you for choosing Sweet Crumbs! Enjoy your treats!
+        </div>
+      </div>
+      <div className="bill-actions no-print">
+        <button className="btn btn-primary" onClick={downloadPDF}>⬇️ Download PDF</button>
+        <button className="btn btn-outline" style={{background:'var(--chocolate)', color:'#fff'}} onClick={()=>window.print()}>🖨️ Print Bill</button>
+        <button className="btn btn-outline" style={{borderColor:'var(--caramel)', color:'var(--caramel-dark)'}} onClick={()=>setPage('menu')}>🛒 Order Again</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+function AdminDashboard({ toast, onLogout }) {
+  const [tab, setTab] = useState('orders');
+  const [orders, setOrders] = useState([]);
+  const [items, setItems] = useState([]);
+  const [loadingO, setLoadingO] = useState(true);
+  const [loadingI, setLoadingI] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [form, setForm] = useState({name:'',price:'',category:'Bread',image_url:'',stock:''});
+
+  const fetchOrders = async () => { setLoadingO(true); const {data}=await supabase.from('orders').select('*').order('created_at',{ascending:false}); setOrders(data||[]); setLoadingO(false); };
+  const fetchItems = async () => { setLoadingI(true); const {data}=await supabase.from('menu_items').select('*').order('created_at',{ascending:false}); setItems(data||[]); setLoadingI(false); };
+  useEffect(()=>{fetchOrders(); fetchItems();},[]);
+
+  const stats = {
+    total: orders.length,
+    pending: orders.filter(o=>o.status==='Pending').length,
+    revenue: orders.filter(o=>o.status==='Delivered').reduce((s,o)=>s+o.total_amount,0),
+    menuItems: items.length
+  };
+
+  const openAdd = () => { setEditItem(null); setForm({name:'',price:'',category:'Bread',image_url:'',stock:''}); setShowModal(true); };
+  const openEdit = (item) => { setEditItem(item); setForm({name:item.name, price:item.price, category:item.category, image_url:item.image_url||'', stock:item.stock}); setShowModal(true); };
+
+  const saveItem = async () => {
+    if (!form.name||!form.price||!form.stock) return toast('Fill all required fields', 'error');
+    const payload = {...form, price:parseFloat(form.price), stock:parseInt(form.stock)};
+    if (editItem) {
+      const {error} = await supabase.from('menu_items').update(payload).eq('id', editItem.id);
+      if (error) return toast('Error: '+error.message, 'error');
+      toast('Item updated!', 'success');
+    } else {
+      const {error} = await supabase.from('menu_items').insert([payload]);
+      if (error) return toast('Error: '+error.message, 'error');
+      toast('Item added!', 'success');
+    }
+    setShowModal(false); fetchItems();
+  };
+
+  const deleteItem = async (id) => {
+    if (!confirm('Delete this item?')) return;
+    await supabase.from('menu_items').delete().eq('id', id);
+    toast('Item deleted', 'success'); fetchItems();
+  };
+
+  const deleteOrder = async (id) => {
+    if (!confirm('Delete this order?')) return;
+    await supabase.from('orders').delete().eq('id', id);
+    toast('Order deleted', 'success'); fetchOrders();
+  };
+
+  const updateStatus = async (id, status) => {
+    await supabase.from('orders').update({status}).eq('id', id);
+    fetchOrders();
+  };
+
+  const cats = ['Bread','Cake','Pastry','Cookie','Muffin','Pie','Donut','Other'];
+
+  return (
+    <div className="section" style={{maxWidth:1200}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem', flexWrap:'wrap', gap:'1rem'}}>
+        <div>
+          <h2 className="section-title" style={{marginBottom:0}}>Admin Dashboard</h2>
+          <p style={{color:'var(--text-light)', fontSize:'0.88rem'}}>Manage your bakery in one place</p>
+        </div>
+        <button className="btn btn-danger btn-sm" onClick={async()=>{await supabase.auth.signOut(); onLogout();}}>🚪 Logout</button>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-label">Total Orders</div><div className="stat-value">{stats.total}</div></div>
+        <div className="stat-card" style={{borderLeftColor:'#E53E3E'}}><div className="stat-label">Pending</div><div className="stat-value">{stats.pending}</div></div>
+        <div className="stat-card" style={{borderLeftColor:'var(--sage)'}}><div className="stat-label">Revenue</div><div className="stat-value">₹{stats.revenue}</div><div className="stat-sub">From delivered orders</div></div>
+        <div className="stat-card" style={{borderLeftColor:'var(--dusty-rose)'}}><div className="stat-label">Menu Items</div><div className="stat-value">{stats.menuItems}</div></div>
+      </div>
+
+      <div className="admin-tabs">
+        {['orders','menu'].map(t => <button key={t} className={`tab-btn ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{t==='orders'?'📦 Orders':'🍞 Menu Items'}</button>)}
+      </div>
+
+      {tab==='orders' && (
+        loadingO ? <div className="empty-state">⏳ Loading orders…</div> :
+        orders.length===0 ? <div className="empty-state"><span className="emoji">📦</span>No orders yet.</div> :
+        <div style={{overflowX:'auto'}}>
+          <table className="admin-table">
+            <thead><tr><th>ID</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+              {orders.map(o => (
+                <tr key={o.id}>
+                  <td style={{fontFamily:'monospace', fontSize:'0.8rem'}}>#{o.id.slice(0,8).toUpperCase()}</td>
+                  <td style={{fontWeight:600}}>{o.customer_name}</td>
+                  <td>{o.phone}</td>
+                  <td>{Array.isArray(o.items) ? o.items.map(i=>`${i.name}×${i.qty}`).join(', ') : '—'}</td>
+                  <td style={{fontWeight:700, color:'var(--caramel-dark)'}}>₹{o.total_amount}</td>
+                  <td><span className={`status-badge status-${o.status.toLowerCase()}`}>{o.status}</span></td>
+                  <td style={{fontSize:'0.8rem', color:'var(--text-light)'}}>{new Date(o.created_at).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</td>
+                  <td>
+                    <div className="action-btns">
+                      <select className="status-select" value={o.status} onChange={e=>updateStatus(o.id, e.target.value)}>
+                        {['Pending','Preparing','Delivered'].map(s=><option key={s}>{s}</option>)}
+                      </select>
+                      <button className="btn btn-danger btn-xs" onClick={()=>deleteOrder(o.id)}>🗑</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab==='menu' && (
+        <>
+          <button className="btn btn-primary btn-sm" onClick={openAdd} style={{marginBottom:'1.25rem'}}>+ Add Item</button>
+          {loadingI ? <div className="empty-state">⏳ Loading items…</div> :
+          items.length===0 ? <div className="empty-state"><span className="emoji">🍞</span>No menu items yet.</div> :
+          <div style={{overflowX:'auto'}}>
+            <table className="admin-table">
+              <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id}>
+                    <td style={{fontWeight:600}}>{CATEGORY_EMOJIS[item.category]||'🍰'} {item.name}</td>
+                    <td>{item.category}</td>
+                    <td style={{fontWeight:700, color:'var(--caramel-dark)'}}>₹{item.price}</td>
+                    <td><span className={`stock-badge ${item.stock>5?'in-stock':item.stock>0?'low-stock':'out-stock'}`}>{item.stock}</span></td>
+                    <td>
+                      <div className="action-btns">
+                        <button className="btn btn-primary btn-xs" onClick={()=>openEdit(item)}>✏️ Edit</button>
+                        <button className="btn btn-danger btn-xs" onClick={()=>deleteItem(item.id)}>🗑</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>}
+        </>
+      )}
+
+      {showModal && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal">
+            <h3 className="modal-title">{editItem?'✏️ Edit Item':'➕ Add New Item'}</h3>
+            <div className="form-grid">
+              {[['name','Item Name','text'],['price','Price (₹)','number'],['stock','Stock Quantity','number'],['image_url','Image URL (optional)','url']].map(([k,l,t]) => (
+                <div key={k} className={`form-group ${k==='image_url'?'full-width':''}`}>
+                  <label>{l}</label>
+                  <input type={t} placeholder={l} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} />
+                </div>
+              ))}
+              <div className="form-group">
+                <label>Category</label>
+                <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
+                  {cats.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{display:'flex', gap:'0.75rem', marginTop:'0.5rem'}}>
+              <button className="btn btn-primary" onClick={saveItem} style={{flex:1}}>{editItem?'Update':'Add Item'}</button>
+              <button className="btn btn-outline" style={{borderColor:'var(--border)', color:'var(--text-mid)'}} onClick={()=>setShowModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── APP ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('home');
+  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(null);
+  const [billData, setBillData] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const { toasts, toast } = useToast();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({data:{session}}) => {
+      if (session?.user?.email === ADMIN_EMAIL) setUser(session.user);
+      setAuthChecked(true);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session) => {
+      setUser(session?.user?.email === ADMIN_EMAIL ? session.user : null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!authChecked) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',fontSize:'2rem'}}>🍰</div>;
+  if (showLogin) return <><LoginPage onLogin={u=>{setUser(u); setShowLogin(false); setPage('admin');}} toast={toast} /><ToastContainer toasts={toasts}/></>;
+
+  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
+  const navItems = [
+    {id:'home', label:'🏠 Home'},
+    {id:'menu', label:'🍞 Menu'},
+    {id:'cart', label:`🛒 Cart`, badge: cartCount},
+  ];
+
+  return (
+    <>
+      <nav>
+        <div className="nav-logo">Sweet <span>Crumbs</span></div>
+        <div className="nav-links">
+          {navItems.map(n => (
+            <button key={n.id} className={`nav-btn ${n.id==='cart'?'cart-btn':''} ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)} style={{position:'relative'}}>
+              {n.label}
+              {n.badge>0 && <span className="cart-badge">{n.badge}</span>}
+            </button>
+          ))}
+          {user
+            ? <button className="nav-btn active" onClick={()=>setPage('admin')}>⚙️ Dashboard</button>
+            : <button className="nav-btn" onClick={()=>setShowLogin(true)}>🔐 Admin</button>
+          }
+        </div>
+      </nav>
+
+      {page==='home' && <HomePage setPage={setPage}/>}
+      {page==='menu' && <MenuPage cart={cart} setCart={setCart} toast={toast}/>}
+      {page==='cart' && <CartPage cart={cart} setCart={setCart} setPage={setPage} toast={toast}/>}
+      {page==='checkout' && <CheckoutPage cart={cart} setCart={setCart} setPage={setPage} setBillData={setBillData} toast={toast}/>}
+      {page==='bill' && <BillPage billData={billData} setPage={setPage}/>}
+      {page==='admin' && user
+        ? <AdminDashboard toast={toast} onLogout={()=>{setUser(null); setPage('home');}}/>
+        : page==='admin' && <div className="section"><div className="empty-state"><span className="emoji">🔐</span><h3 style={{color:'var(--chocolate)', marginBottom:'0.5rem'}}>Admin Access Required</h3><button className="btn btn-primary" onClick={()=>setShowLogin(true)}>Login as Admin</button></div></div>
+      }
+      <ToastContainer toasts={toasts}/>
+      <footer style={{background:' var(--chocolate)', color:'#8B6B4A', textAlign:'center', padding:'1.5rem', fontSize:'0.82rem', marginTop:'3rem'}}>
+        🍰 Sweet Crumbs Bakery — Baked with Love • © {new Date().getFullYear()}
+      </footer>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
